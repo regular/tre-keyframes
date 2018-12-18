@@ -1,0 +1,58 @@
+{
+  "name": "tre-keyframes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/regular/tre-keyframes.git"
+  },
+  "keywords": [],
+  "author": "Jan Bölsche <jan@lagomorph.de> (https://regular.codes/)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/regular/tre-keyframes/issues"
+  },
+  "homepage": "https://github.com/regular/tre-keyframes#readme",
+  "dependencies": {
+    "collect-mutations": "^1.0.5",
+    "module-styles": "^1.0.0",
+    "mutant": "^3.22.1",
+    "pull-stream": "^3.6.9"
+  },
+  "devDependencies": {
+    "tre-finder": "^2.2.0",
+    "tre-timeline": "^1.0.0",
+    "ssb-revisions": "^1.0.1",
+    "tre-client": "^1.2.1",
+    "tre-parts": "^1.0.0",
+    "tre-transforms": "^1.7.0"
+  },
+  "tre-init": {
+    "plugins": {
+      "tre-client": true,
+      "ssb-revisions": true,
+      "tre-parts": true
+    },
+    "prototypes": {
+      "tre-transforms": true
+    },
+    "messages": {
+      "animations": {
+        "type": "folder",
+        "branch": "%root",
+        "root": "%root",
+        "name": "Animations"
+      },
+      "animation": {
+        "type": "animation",
+        "branch": "%animations",
+        "root": "%root",
+        "name": "Anim1"
+      }
+    }
+  }
+}
