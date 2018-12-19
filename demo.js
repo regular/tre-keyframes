@@ -10,6 +10,7 @@ const Keyframes = require('.')
 const {makePane, makeDivider, makeSplitPane} = require('tre-split-pane')
 const Editor = require('tre-json-editor')
 const Shell = require('tre-editor-shell')
+const pointer = require('json8-pointer')
 require('brace/theme/solarized_dark')
 
 client( (err, ssb, config) => {
@@ -54,11 +55,14 @@ client( (err, ssb, config) => {
   const renderTimeline = RenderTimeline(ssb)
 
   const framesObs = MutantArray()
+  const contentObs = Value()
+  const tracksObs = MutantArray()
   const items = renderKeyframes({
     key: config.tre.branches.animation
   }, {
     selectedFrameObs,
-    framesObs
+    framesObs,
+    contentObs
   })
 
   document.body.appendChild(h('.tre-keyframes-editor', {
@@ -67,8 +71,22 @@ client( (err, ssb, config) => {
       console.warn(e)
       const kv = framesObs().find( kv => kv.value.content.frame == e.detail.frame )
       if (kv) {
-        console.warn('selected', kv)
-        selectedFrameObs.set(kv)
+        if (kv !== selectedFrameObs()) {
+          console.warn('selected', kv)
+          selectedFrameObs.set(kv)
+        } else {
+          const content = contentObs()
+          const tracks = tracksObs()
+          const track = tracks[e.detail.track]
+          if (track) {
+            const {key, path, type} = track
+            const fullpath = ['values', key].concat( path ? pointer.decode(path) : [])
+            console.warn(content, fullpath, type)
+            //if (typeof pointer.find(content, fullpath) !== ) return
+            createValue(content, fullpath, type || 'object')
+            contentObs.set(content)
+          }
+        }
       } else {
         ssb.publish({
           type: 'keyframe',
@@ -89,6 +107,7 @@ client( (err, ssb, config) => {
           finder,
           renderTimeline(null, {
             tree_element: finder,
+            tracksObs,
             items,
             columnClasses: items.columnClasses
           })
@@ -108,7 +127,7 @@ client( (err, ssb, config) => {
             if (revisionRoot(kv) == revisionRoot(current_kv)) return computed.NO_CHANGE
             current_kv = kv
             console.warn('rendering editor shell for', kv)
-            const contentObs = Value(Object.assign({}, kv.value.content))
+            contentObs.set(Object.assign({}, kv.value.content))
             return renderShell(kv, {renderEditor, contentObs})
           })
         ])
@@ -173,3 +192,28 @@ setStyle(`
 function revisionRoot(kv) {
   return kv && kv.value.content && kv.value.content.revisionRoot || kv && kv.key
 }
+
+function createValue(doc, path, type) {
+  console.warn('createValue', doc, path, type)
+  if (!path.length) return
+  const [first, ...rest] = path
+  if (rest.length) {
+    if (doc[first] == undefined) {
+      doc[first] = {}
+    } else {
+      if (typeof doc[first] !== 'object') return
+    }
+    createValue(doc[first], rest, type)
+  } else {
+    if (doc[first] !== undefined) return
+    const values = {
+      number: 0,
+      integer: 0,
+      string: '',
+      object: {},
+      array: []
+    }
+    doc[first] = values[type]
+  }
+}
+

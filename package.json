@@ -19,6 +19,7 @@
   "homepage": "https://github.com/regular/tre-keyframes#readme",
   "dependencies": {
     "collect-mutations": "^1.0.5",
+    "json8-pointer": "^0.7.1",
     "module-styles": "^1.0.0",
     "mutant": "^3.22.1",
     "pull-stream": "^3.6.9"
