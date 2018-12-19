@@ -24,11 +24,12 @@
     "pull-stream": "^3.6.9"
   },
   "devDependencies": {
-    "tre-finder": "^2.2.0",
-    "tre-timeline": "^1.0.0",
     "ssb-revisions": "^1.0.1",
     "tre-client": "^1.2.1",
+    "tre-finder": "^2.2.0",
     "tre-parts": "^1.0.0",
+    "tre-split-pane": "^1.0.0",
+    "tre-timeline": "^1.0.0",
     "tre-transforms": "^1.7.0"
   },
   "tre-init": {

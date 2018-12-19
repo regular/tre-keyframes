@@ -4,6 +4,7 @@ const {RenderTimeline, renderPropertyTree} = require('tre-timeline')
 const h = require('mutant/html-element')
 const setStyle = require('module-styles')('tre-keyframes-demo')
 const Keyframes = require('.')
+const {makePane, makeDivider, makeSplitPane} = require('tre-split-pane')
 
 client( (err, ssb, config) => {
   if (err) return console.error(err)
@@ -30,7 +31,7 @@ client( (err, ssb, config) => {
     key: config.tre.branches.animation
   })
 
-  document.body.appendChild(h('.pane', {
+  document.body.appendChild(h('.tre-keyframes-editor', {
     hooks: [el => el => {items.abort()}],
     'ev-timeline-click': e => {
       console.warn(e)
@@ -47,12 +48,28 @@ client( (err, ssb, config) => {
       }
     }
   }, [
-    finder,
-    renderTimeline(null, {
-      tree_element: finder,
-      items,
-      columnClasses: items.columnClasses
-    })
+    makeSplitPane({horiz: true}, [
+      makePane('75%', [
+        h('div.tre-finder-with-timeline', [
+          finder,
+          renderTimeline(null, {
+            tree_element: finder,
+            items,
+            columnClasses: items.columnClasses
+          })
+        ])
+      ]),
+      makeDivider(),
+      makePane('15%', [
+        h('div', {
+          style: {
+            height: '100%',
+            width: '100%',
+            margin: 0
+          }
+        }, 'Editor')
+      ])
+    ])
   ]))
 
 })
@@ -66,19 +83,23 @@ setStyle(`
     font-family: sans-serif;
     font-size: 12pt;
   }
-  .pane ::-webkit-scrollbar {
+  .tre-keyframes-editor ::-webkit-scrollbar {
+    width: 0px;
     height: 0px;
   }
-  .pane {
+  .tre-keyframes-editor {
+    height: 12em;
+    width: 100%;
+  }
+  .tre-finder-with-timeline {
     display: grid;
     grid-template-columns: 10em auto;
     grid-template-rows: 100%;
     grid-auto-flow: column;
+    place-content: stretch;
+    place-items: stretch;
     background: gold;
     width: 100%;
-    height: min-content;
-    max-height: 12em;
-    min-height: 1.2em;
     overflow-y: auto;
   }
 `)
