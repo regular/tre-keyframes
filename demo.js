@@ -11,6 +11,7 @@ const {makePane, makeDivider, makeSplitPane} = require('tre-split-pane')
 const Editor = require('tre-json-editor')
 const Shell = require('tre-editor-shell')
 const pointer = require('json8-pointer')
+const {createValue,interpolate,addFramePaths} = require('./lib/interpolate')
 require('brace/theme/solarized_dark')
 
 client( (err, ssb, config) => {
@@ -57,17 +58,53 @@ client( (err, ssb, config) => {
   const framesObs = MutantArray()
   const contentObs = Value()
   const tracksObs = MutantArray()
+  const hoverFrame = Value()
+
+  const keyframeInfex = computed(framesObs, keyframes => {
+    const result = {}
+    keyframes.forEach(kv => {
+      addFramePaths(result, kv.value.content)
+    })
+    return result
+  })
+
+  const hoverValues = computed([hoverFrame, keyframeInfex], (frame, paths) => {
+    const contents = framesObs().map(kv => kv.value.content)
+    return interpolate(paths, contents, frame)
+  })
+
+  function renderTrackControls({row, key, path, type}) {
+    const fullpath = path ? pointer.encode([key].concat(pointer.decode(path))) : pointer.encode([key])
+    const valueSpan = computed(hoverValues, values => {
+      const value = pointer.find(values, fullpath)
+      if (value == undefined) return []
+      return h('span.track-value', value)
+    })
+    return h('.track-controls', {
+        classList: [type]
+    }, [
+      h('span.track-no', row),
+      type !== 'object' ? valueSpan : []
+    ])
+  }
+
+
   const items = renderKeyframes({
     key: config.tre.branches.animation
   }, {
     selectedFrameObs,
     framesObs,
-    //contentObs,
     tracksObs
   })
 
   document.body.appendChild(h('.tre-keyframes-editor', {
     hooks: [el => el => {items.abort()}],
+    'ev-mousemove': e => {
+      const slot = e.currentTarget.querySelector('.frameSlot:hover')
+      if (!slot) return hoverFrame.set(null)
+      const col = slot.style['grid-column-start']
+      hoverFrame.set(col-2)
+    },
     'ev-timeline-click': e => {
       console.warn(e)
       const kv = framesObs().find( kv => kv.value.content.frame == e.detail.frame )
@@ -110,7 +147,8 @@ client( (err, ssb, config) => {
             tree_element: finder,
             tracksObs,
             items,
-            columnClasses: items.columnClasses
+            columnClasses: items.columnClasses,
+            renderTrackControls
           })
         ])
       ]),
@@ -155,6 +193,40 @@ setStyle(`
     height: 18em;
     width: 100%;
   }
+
+  .track-controls {
+    display: inline-grid;
+    grid-template-columns: 1fr 2fr;
+    grid-template-rows: 1fr;
+    grid-auto-flow: column;
+    align-items: center;
+    justify-content: space-areound;
+    background: #888;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  .track-controls > .track-value {
+    background: #aaa;
+    width: 4em;
+    hoight: min-content;
+    overflow: hidden;
+    justify-self: end;
+  }
+  .track-controls > .track-no {
+    border-radius: 3px;
+    background: #bbb;
+    width: min-content;
+    min-width: 1.3em;
+    font-size: smaller;
+    text-align: center;
+    padding: 2px;
+  }
+  .track-controls.number > .track-no {
+    background: green;
+    color: #ddd;
+  }
+  
   .tre-finder-with-timeline {
     display: grid;
     grid-template-columns: 10em auto;
@@ -194,27 +266,4 @@ function revisionRoot(kv) {
   return kv && kv.value.content && kv.value.content.revisionRoot || kv && kv.key
 }
 
-function createValue(doc, path, type) {
-  console.warn('createValue', doc, path, type)
-  if (!path.length) return
-  const [first, ...rest] = path
-  if (rest.length) {
-    if (doc[first] == undefined) {
-      doc[first] = {}
-    } else {
-      if (typeof doc[first] !== 'object') return
-    }
-    createValue(doc[first], rest, type)
-  } else {
-    if (doc[first] !== undefined) return
-    const values = {
-      number: 0,
-      integer: 0,
-      string: '',
-      object: {},
-      array: []
-    }
-    doc[first] = values[type]
-  }
-}
 
