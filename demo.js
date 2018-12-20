@@ -62,7 +62,8 @@ client( (err, ssb, config) => {
   }, {
     selectedFrameObs,
     framesObs,
-    contentObs
+    //contentObs,
+    tracksObs
   })
 
   document.body.appendChild(h('.tre-keyframes-editor', {
