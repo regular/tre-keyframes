@@ -14,6 +14,27 @@ const pointer = require('json8-pointer')
 const {createValue,interpolate,addFramePaths} = require('./lib/interpolate')
 require('brace/theme/solarized_dark')
 
+function renderToolbar(scaleObs) {
+  const scaleSlider = h('.tre-timeline-scale', [
+    h('span', 'Zoom:'),
+    h('input', {
+      type: 'range',
+      value: scaleObs,
+      min: '0.3',
+      max: '1.5',
+      step: '0.05',
+      'ev-input': e => {
+        console.log('timeline scale:', e.target.value)
+        scaleObs.set(Number(e.target.value))
+      }
+    }),
+    h('span', scaleObs)
+  ])
+  return h('.tre-timeline-toolbar', [
+    scaleSlider
+  ])
+}
+
 client( (err, ssb, config) => {
   if (err) return console.error(err)
 
@@ -58,6 +79,7 @@ client( (err, ssb, config) => {
   const framesObs = MutantArray()
   const contentObs = Value()
   const tracksObs = MutantArray()
+  const cellWidthObs = Value(1)
   const hoverFrame = Value()
 
   const keyframeInfex = computed(framesObs, keyframes => {
@@ -141,11 +163,13 @@ client( (err, ssb, config) => {
   }, [
     makeSplitPane({horiz: true}, [
       makePane('75%', [
+        renderToolbar(cellWidthObs),
         h('div.tre-finder-with-timeline', [
           finder,
           renderTimeline(null, {
             tree_element: finder,
             tracksObs,
+            cellWidthObs,
             items,
             columnClasses: items.columnClasses,
             renderTrackControls
